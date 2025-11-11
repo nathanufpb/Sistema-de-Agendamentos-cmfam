@@ -292,4 +292,6 @@ if __name__ == '__main__':
         init_db()
     
     # Run the app
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    # Note: For production, set debug=False and use a production WSGI server
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(debug=debug_mode, host='0.0.0.0', port=5000)
