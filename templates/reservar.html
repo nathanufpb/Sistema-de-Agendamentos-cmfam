@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Reserva - Sistema de Agendamentos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-calendar-plus"></i> Nova Reserva
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('reservar') }}" id="reservaForm">
+                    <div class="mb-3">
+                        <label for="equipamento_id" class="form-label">
+                            <i class="bi bi-tools"></i> Equipamento *
+                        </label>
+                        <select class="form-select" id="equipamento_id" name="equipamento_id" required>
+                            <option value="">Selecione um equipamento...</option>
+                            {% for equipamento in equipamentos %}
+                            <option value="{{ equipamento.id }}" 
+                                    {% if request.args.get('equipamento_id') == equipamento.id|string %}selected{% endif %}>
+                                {{ equipamento.nome }} - {{ equipamento.localizacao }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Escolha o equipamento que deseja reservar.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="usuario_id" class="form-label">
+                            <i class="bi bi-person"></i> Usuário *
+                        </label>
+                        <select class="form-select" id="usuario_id" name="usuario_id" required>
+                            <option value="">Selecione um usuário...</option>
+                            {% for usuario in usuarios %}
+                            <option value="{{ usuario.id }}">{{ usuario.nome }} ({{ usuario.email }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Selecione o usuário responsável pela reserva.</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_inicio" class="form-label">
+                                <i class="bi bi-calendar-event"></i> Data e Hora de Início *
+                            </label>
+                            <input type="datetime-local" class="form-control" id="data_inicio" 
+                                   name="data_inicio" required>
+                            <div class="form-text">Quando a reserva deve começar.</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="data_fim" class="form-label">
+                                <i class="bi bi-calendar-event"></i> Data e Hora de Término *
+                            </label>
+                            <input type="datetime-local" class="form-control" id="data_fim" 
+                                   name="data_fim" required>
+                            <div class="form-text">Quando a reserva deve terminar.</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="observacoes" class="form-label">
+                            <i class="bi bi-chat-left-text"></i> Observações
+                        </label>
+                        <textarea class="form-control" id="observacoes" name="observacoes" 
+                                  rows="3" placeholder="Informações adicionais sobre o uso (opcional)"></textarea>
+                        <div class="form-text">Adicione qualquer informação adicional relevante.</div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        <strong>Importante:</strong> O sistema verificará automaticamente se há conflitos 
+                        de horário com outras reservas do mesmo equipamento.
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Confirmar Reserva
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Set minimum date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    
+    const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    document.getElementById('data_inicio').min = minDateTime;
+    document.getElementById('data_fim').min = minDateTime;
+    
+    // Update end time minimum when start time changes
+    document.getElementById('data_inicio').addEventListener('change', function() {
+        document.getElementById('data_fim').min = this.value;
+    });
+});
+</script>
+{% endblock %}

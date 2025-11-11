@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Administrativo - Sistema de Agendamentos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-gear"></i> Painel Administrativo
+        </h1>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-tools"></i> Total de Equipamentos
+                </h5>
+                <p class="card-text display-4">{{ equipamentos|length }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-person"></i> Total de Usuários
+                </h5>
+                <p class="card-text display-4">{{ usuarios|length }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="bi bi-calendar-check"></i> Reservas Ativas
+                </h5>
+                <p class="card-text display-4">{{ reservas_ativas }}</p>
+                <small>Total: {{ total_reservas }}</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Equipments Management -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-tools"></i> Gerenciar Equipamentos
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Descrição</th>
+                                <th>Localização</th>
+                                <th>Status</th>
+                                <th>Criado em</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for equipamento in equipamentos %}
+                            <tr>
+                                <td>{{ equipamento.id }}</td>
+                                <td><strong>{{ equipamento.nome }}</strong></td>
+                                <td>{{ equipamento.descricao }}</td>
+                                <td>{{ equipamento.localizacao }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if equipamento.ativo else 'danger' }}">
+                                        {{ 'Ativo' if equipamento.ativo else 'Inativo' }}
+                                    </span>
+                                </td>
+                                <td>{{ equipamento.created_at[:10] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i> 
+                    Para adicionar ou editar equipamentos, utilize as funcionalidades de gerenciamento do banco de dados.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Management -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-person"></i> Gerenciar Usuários
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Cadastrado em</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usuario in usuarios %}
+                            <tr>
+                                <td>{{ usuario.id }}</td>
+                                <td><strong>{{ usuario.nome }}</strong></td>
+                                <td>{{ usuario.email }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'warning' if usuario.tipo == 'admin' else 'secondary' }}">
+                                        {{ usuario.tipo|title }}
+                                    </span>
+                                </td>
+                                <td>{{ usuario.created_at[:10] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle"></i> 
+                    Para adicionar ou editar usuários, utilize as funcionalidades de gerenciamento do banco de dados.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-lightning"></i> Ações Rápidas
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('equipamentos') }}" class="btn btn-primary w-100">
+                            <i class="bi bi-tools"></i> Ver Equipamentos
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('minhas_reservas') }}" class="btn btn-success w-100">
+                            <i class="bi bi-list-check"></i> Ver Reservas
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('calendario') }}" class="btn btn-info w-100">
+                            <i class="bi bi-calendar3"></i> Ver Calendário
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('reservar') }}" class="btn btn-warning w-100">
+                            <i class="bi bi-plus-circle"></i> Nova Reserva
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

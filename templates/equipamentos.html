@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}Equipamentos - Sistema de Agendamentos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-tools"></i> Equipamentos Disponíveis
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    {% for equipamento in equipamentos %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 shadow-sm equipamento-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">{{ equipamento.nome }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                    <strong><i class="bi bi-info-circle"></i> Descrição:</strong><br>
+                    {{ equipamento.descricao }}
+                </p>
+                <p class="card-text">
+                    <strong><i class="bi bi-geo-alt"></i> Localização:</strong><br>
+                    {{ equipamento.localizacao }}
+                </p>
+                <p class="card-text">
+                    <strong><i class="bi bi-toggles"></i> Status:</strong>
+                    <span class="badge bg-{{ 'success' if equipamento.ativo else 'danger' }}">
+                        {{ 'Ativo' if equipamento.ativo else 'Inativo' }}
+                    </span>
+                </p>
+            </div>
+            <div class="card-footer bg-light">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('equipamento_detalhes', id=equipamento.id) }}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> Ver Detalhes e Horários
+                    </a>
+                    {% if equipamento.ativo %}
+                    <a href="{{ url_for('reservar') }}?equipamento_id={{ equipamento.id }}" 
+                       class="btn btn-primary btn-sm">
+                        <i class="bi bi-calendar-plus"></i> Fazer Reserva
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not equipamentos %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> Nenhum equipamento cadastrado no momento.
+</div>
+{% endif %}
+{% endblock %}

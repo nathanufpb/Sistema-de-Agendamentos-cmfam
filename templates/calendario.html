@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Calendário - Sistema de Agendamentos{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-calendar3"></i> Calendário de Reservas
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Filtrar por Equipamento</h5>
+            </div>
+            <div class="card-body">
+                <select class="form-select" id="equipamentoFilter">
+                    <option value="">Todos os equipamentos</option>
+                    {% for equipamento in equipamentos %}
+                    <option value="{{ equipamento.id }}">{{ equipamento.nome }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Legenda</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <span class="badge bg-success">■</span> Confirmada
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-warning">■</span> Pendente
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-danger">■</span> Cancelada
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Visualização de Reservas</h5>
+            </div>
+            <div class="card-body">
+                <div id="calendar-container">
+                    <div id="loading" class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Carregando...</span>
+                        </div>
+                        <p class="mt-2">Carregando reservas...</p>
+                    </div>
+                    <div id="reservas-list" style="display:none;">
+                        <!-- Reservations will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allReservations = [];
+
+// Load reservations for selected equipment
+function loadReservations(equipamentoId = '') {
+    const loading = document.getElementById('loading');
+    const reservasList = document.getElementById('reservas-list');
+    
+    loading.style.display = 'block';
+    reservasList.style.display = 'none';
+    
+    let url = equipamentoId ? `/api/reservas/${equipamentoId}` : '';
+    
+    if (!equipamentoId) {
+        // Load all equipment and their reservations
+        reservasList.innerHTML = '<p class="text-muted">Selecione um equipamento para ver as reservas.</p>';
+        loading.style.display = 'none';
+        reservasList.style.display = 'block';
+        return;
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            allReservations = data;
+            displayReservations(data);
+            loading.style.display = 'none';
+            reservasList.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error loading reservations:', error);
+            reservasList.innerHTML = '<div class="alert alert-danger">Erro ao carregar reservas.</div>';
+            loading.style.display = 'none';
+            reservasList.style.display = 'block';
+        });
+}
+
+// Display reservations in a list format
+function displayReservations(reservations) {
+    const container = document.getElementById('reservas-list');
+    
+    if (reservations.length === 0) {
+        container.innerHTML = '<div class="alert alert-info">Nenhuma reserva encontrada para este equipamento.</div>';
+        return;
+    }
+    
+    // Group by date
+    const groupedByDate = {};
+    reservations.forEach(reserva => {
+        const date = reserva.start.split('T')[0];
+        if (!groupedByDate[date]) {
+            groupedByDate[date] = [];
+        }
+        groupedByDate[date].push(reserva);
+    });
+    
+    let html = '';
+    Object.keys(groupedByDate).sort().forEach(date => {
+        const dateObj = new Date(date);
+        const formattedDate = dateObj.toLocaleDateString('pt-BR', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        html += `<h5 class="mt-3 mb-2"><i class="bi bi-calendar3"></i> ${formattedDate}</h5>`;
+        html += '<div class="list-group mb-3">';
+        
+        groupedByDate[date].forEach(reserva => {
+            const startTime = new Date(reserva.start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const endTime = new Date(reserva.end).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            
+            let badgeClass = 'bg-secondary';
+            if (reserva.status === 'confirmada') badgeClass = 'bg-success';
+            else if (reserva.status === 'pendente') badgeClass = 'bg-warning';
+            else if (reserva.status === 'cancelada') badgeClass = 'bg-danger';
+            
+            html += `
+                <div class="list-group-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">${reserva.title}</h6>
+                            <p class="mb-0"><i class="bi bi-clock"></i> ${startTime} - ${endTime}</p>
+                        </div>
+                        <span class="badge ${badgeClass}">${reserva.status}</span>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+    });
+    
+    container.innerHTML = html;
+}
+
+// Event listener for equipment filter
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('equipamentoFilter').addEventListener('change', function() {
+        loadReservations(this.value);
+    });
+});
+</script>
+{% endblock %}
