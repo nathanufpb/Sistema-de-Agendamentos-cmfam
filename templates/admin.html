@@ -46,6 +46,50 @@
     </div>
 </div>
 
+<!-- Equipment Create Form -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-plus-circle"></i> Cadastrar Novo Equipamento
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('criar_equipamento') }}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="novoEquipamentoNome" class="form-label">Nome *</label>
+                            <input type="text" class="form-control" id="novoEquipamentoNome" name="nome" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="novoEquipamentoLocalizacao" class="form-label">Localização</label>
+                            <input type="text" class="form-control" id="novoEquipamentoLocalizacao" name="localizacao">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="novoEquipamentoAtivo" name="ativo" checked>
+                                <label class="form-check-label" for="novoEquipamentoAtivo">
+                                    Equipamento ativo
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label for="novoEquipamentoDescricao" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="novoEquipamentoDescricao" name="descricao" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Salvar Equipamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Equipments Management -->
 <div class="row mb-4">
     <div class="col-12">
@@ -66,6 +110,7 @@
                                 <th>Localização</th>
                                 <th>Status</th>
                                 <th>Criado em</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -73,31 +118,120 @@
                             <tr>
                                 <td>{{ equipamento.id }}</td>
                                 <td><strong>{{ equipamento.nome }}</strong></td>
-                                <td>{{ equipamento.descricao }}</td>
-                                <td>{{ equipamento.localizacao }}</td>
+                                <td>{{ equipamento.descricao or '-' }}</td>
+                                <td>{{ equipamento.localizacao or '-' }}</td>
                                 <td>
                                     <span class="badge bg-{{ 'success' if equipamento.ativo else 'danger' }}">
                                         {{ 'Ativo' if equipamento.ativo else 'Inativo' }}
                                     </span>
                                 </td>
                                 <td>{{ equipamento.created_at[:10] }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editarEquipamentoModal-{{ equipamento.id }}">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <form method="post" action="{{ url_for('alterar_status_equipamento', equipamento_id=equipamento.id) }}">
+                                            <input type="hidden" name="ativo" value="{{ 0 if equipamento.ativo else 1 }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-{{ 'danger' if equipamento.ativo else 'success' }}">
+                                                <i class="bi {{ 'bi-x-circle' if equipamento.ativo else 'bi-check-circle' }}"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
-                </div>
-                <div class="alert alert-info mt-3">
-                    <i class="bi bi-info-circle"></i> 
-                    Para adicionar ou editar equipamentos, utilize as funcionalidades de gerenciamento do banco de dados.
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+{% for equipamento in equipamentos %}
+<div class="modal fade" id="editarEquipamentoModal-{{ equipamento.id }}" tabindex="-1" aria-labelledby="editarEquipamentoModalLabel-{{ equipamento.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarEquipamentoModalLabel-{{ equipamento.id }}">
+                    Editar Equipamento #{{ equipamento.id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ url_for('editar_equipamento', equipamento_id=equipamento.id) }}">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="equipamentoNome-{{ equipamento.id }}" class="form-label">Nome *</label>
+                            <input type="text" class="form-control" id="equipamentoNome-{{ equipamento.id }}" name="nome" value="{{ equipamento.nome }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="equipamentoLocalizacao-{{ equipamento.id }}" class="form-label">Localização</label>
+                            <input type="text" class="form-control" id="equipamentoLocalizacao-{{ equipamento.id }}" name="localizacao" value="{{ equipamento.localizacao }}">
+                        </div>
+                        <div class="col-12">
+                            <label for="equipamentoDescricao-{{ equipamento.id }}" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="equipamentoDescricao-{{ equipamento.id }}" name="descricao" rows="3">{{ equipamento.descricao or '' }}</textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="equipamentoAtivo-{{ equipamento.id }}" name="ativo" {% if equipamento.ativo %}checked{% endif %}>
+                                <label class="form-check-label" for="equipamentoAtivo-{{ equipamento.id }}">
+                                    Equipamento ativo
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Atualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
 <!-- Users Management -->
 <div class="row mb-4">
     <div class="col-12">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="bi bi-person-plus"></i> Cadastrar Novo Usuário
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('criar_usuario') }}">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="novoUsuarioNome" class="form-label">Nome *</label>
+                            <input type="text" class="form-control" id="novoUsuarioNome" name="nome" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="novoUsuarioEmail" class="form-label">E-mail *</label>
+                            <input type="email" class="form-control" id="novoUsuarioEmail" name="email" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="novoUsuarioTipo" class="form-label">Tipo</label>
+                            <select class="form-select" id="novoUsuarioTipo" name="tipo">
+                                <option value="usuario" selected>Usuário</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-person-check"></i> Salvar Usuário
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
         <div class="card">
             <div class="card-header bg-success text-white">
                 <h4 class="mb-0">
@@ -114,6 +248,7 @@
                                 <th>Email</th>
                                 <th>Tipo</th>
                                 <th>Cadastrado em</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -128,19 +263,60 @@
                                     </span>
                                 </td>
                                 <td>{{ usuario.created_at[:10] }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#editarUsuarioModal-{{ usuario.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                <div class="alert alert-info mt-3">
-                    <i class="bi bi-info-circle"></i> 
-                    Para adicionar ou editar usuários, utilize as funcionalidades de gerenciamento do banco de dados.
-                </div>
             </div>
         </div>
     </div>
 </div>
+
+{% for usuario in usuarios %}
+<div class="modal fade" id="editarUsuarioModal-{{ usuario.id }}" tabindex="-1" aria-labelledby="editarUsuarioModalLabel-{{ usuario.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarUsuarioModalLabel-{{ usuario.id }}">
+                    Editar Usuário #{{ usuario.id }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ url_for('editar_usuario', usuario_id=usuario.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="usuarioNome-{{ usuario.id }}" class="form-label">Nome *</label>
+                        <input type="text" class="form-control" id="usuarioNome-{{ usuario.id }}" name="nome" value="{{ usuario.nome }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="usuarioEmail-{{ usuario.id }}" class="form-label">E-mail *</label>
+                        <input type="email" class="form-control" id="usuarioEmail-{{ usuario.id }}" name="email" value="{{ usuario.email }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="usuarioTipo-{{ usuario.id }}" class="form-label">Tipo</label>
+                        <select class="form-select" id="usuarioTipo-{{ usuario.id }}" name="tipo">
+                            <option value="usuario" {% if usuario.tipo != 'admin' %}selected{% endif %}>Usuário</option>
+                            <option value="admin" {% if usuario.tipo == 'admin' %}selected{% endif %}>Administrador</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save"></i> Atualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
 
 <!-- Quick Actions -->
 <div class="row">

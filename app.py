@@ -68,8 +68,8 @@ def init_db():
     if cursor.fetchone()[0] == 0:
         sample_equipment = [
             ('Microscópio Eletrônico', 'Microscópio de varredura eletrônica (MEV)', 'Sala 101'),
-            ('Espectrômetro de Massa', 'Espectrômetro de massa de alta resolução', 'Sala 102'),
-            ('Cromatógrafo', 'Sistema de cromatografia líquida (HPLC)', 'Sala 103'),
+            ('Termocicladora PCR', 'Termocicladora para PCR em tempo real', 'Sala 102'),
+            ('Termocicladora extração', 'Termocicladora para extração de DNA', 'Sala 103'),
             ('Analisador Térmico', 'Analisador termogravimétrico (TGA)', 'Sala 104')
         ]
         cursor.executemany(
@@ -285,6 +285,157 @@ def admin():
                          usuarios=usuarios,
                          total_reservas=total_reservas,
                          reservas_ativas=reservas_ativas)
+
+@app.route('/admin/equipamentos/criar', methods=['POST'])
+def criar_equipamento():
+    """Handle creation of a new equipment record"""
+    nome = (request.form.get('nome') or '').strip()
+    descricao = (request.form.get('descricao') or '').strip()
+    localizacao = (request.form.get('localizacao') or '').strip()
+    ativo = 1 if request.form.get('ativo') == 'on' else 0
+
+    if not nome:
+        flash('O nome do equipamento é obrigatório.', 'error')
+        return redirect(url_for('admin'))
+
+    conn = get_db_connection()
+    conn.execute(
+        'INSERT INTO equipamentos (nome, descricao, localizacao, ativo) VALUES (?, ?, ?, ?)',
+        (nome, descricao, localizacao, ativo)
+    )
+    conn.commit()
+    conn.close()
+
+    flash('Equipamento cadastrado com sucesso!', 'success')
+    return redirect(url_for('admin'))
+
+@app.route('/admin/equipamentos/<int:equipamento_id>/editar', methods=['POST'])
+def editar_equipamento(equipamento_id):
+    """Update equipment information"""
+    nome = (request.form.get('nome') or '').strip()
+    descricao = (request.form.get('descricao') or '').strip()
+    localizacao = (request.form.get('localizacao') or '').strip()
+    ativo = 1 if request.form.get('ativo') == 'on' else 0
+
+    if not nome:
+        flash('O nome do equipamento é obrigatório.', 'error')
+        return redirect(url_for('admin'))
+
+    conn = get_db_connection()
+    cursor = conn.execute(
+        '''
+        UPDATE equipamentos
+        SET nome = ?, descricao = ?, localizacao = ?, ativo = ?
+        WHERE id = ?
+        ''',
+        (nome, descricao, localizacao, ativo, equipamento_id)
+    )
+    updated = cursor.rowcount
+    conn.commit()
+    conn.close()
+
+    if updated == 0:
+        flash('Equipamento não encontrado.', 'error')
+    else:
+        flash('Equipamento atualizado com sucesso!', 'success')
+
+    return redirect(url_for('admin'))
+
+@app.route('/admin/equipamentos/<int:equipamento_id>/status', methods=['POST'])
+def alterar_status_equipamento(equipamento_id):
+    """Toggle equipment active status"""
+    try:
+        novo_status = int(request.form.get('ativo', '1'))
+    except ValueError:
+        flash('Status inválido informado.', 'error')
+        return redirect(url_for('admin'))
+
+    if novo_status not in (0, 1):
+        flash('Status inválido informado.', 'error')
+        return redirect(url_for('admin'))
+
+    conn = get_db_connection()
+    cursor = conn.execute(
+        'UPDATE equipamentos SET ativo = ? WHERE id = ?',
+        (novo_status, equipamento_id)
+    )
+    updated = cursor.rowcount
+    conn.commit()
+    conn.close()
+
+    if updated == 0:
+        flash('Equipamento não encontrado.', 'error')
+    else:
+        status_label = 'ativado' if novo_status == 1 else 'desativado'
+        flash(f'Equipamento {status_label} com sucesso!', 'success')
+
+    return redirect(url_for('admin'))
+
+@app.route('/admin/usuarios/criar', methods=['POST'])
+def criar_usuario():
+    """Handle creation of a new user account"""
+    nome = (request.form.get('nome') or '').strip()
+    email = (request.form.get('email') or '').strip().lower()
+    tipo = (request.form.get('tipo') or 'usuario').strip().lower()
+
+    if not nome or not email:
+        flash('Nome e e-mail são obrigatórios.', 'error')
+        return redirect(url_for('admin'))
+
+    if tipo not in ('admin', 'usuario'):
+        tipo = 'usuario'
+
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            'INSERT INTO usuarios (nome, email, tipo) VALUES (?, ?, ?)',
+            (nome, email, tipo)
+        )
+        conn.commit()
+    except sqlite3.IntegrityError:
+        flash('Já existe um usuário cadastrado com este e-mail.', 'error')
+    else:
+        flash('Usuário cadastrado com sucesso!', 'success')
+    finally:
+        conn.close()
+
+    return redirect(url_for('admin'))
+
+@app.route('/admin/usuarios/<int:usuario_id>/editar', methods=['POST'])
+def editar_usuario(usuario_id):
+    """Update user details"""
+    nome = (request.form.get('nome') or '').strip()
+    email = (request.form.get('email') or '').strip().lower()
+    tipo = (request.form.get('tipo') or 'usuario').strip().lower()
+
+    if not nome or not email:
+        flash('Nome e e-mail são obrigatórios.', 'error')
+        return redirect(url_for('admin'))
+
+    if tipo not in ('admin', 'usuario'):
+        tipo = 'usuario'
+
+    conn = get_db_connection()
+    try:
+        cursor = conn.execute(
+            'UPDATE usuarios SET nome = ?, email = ?, tipo = ? WHERE id = ?',
+            (nome, email, tipo, usuario_id)
+        )
+        updated = cursor.rowcount
+        conn.commit()
+    except sqlite3.IntegrityError:
+        conn.close()
+        flash('Já existe um usuário cadastrado com este e-mail.', 'error')
+        return redirect(url_for('admin'))
+
+    conn.close()
+
+    if updated == 0:
+        flash('Usuário não encontrado.', 'error')
+    else:
+        flash('Usuário atualizado com sucesso!', 'success')
+
+    return redirect(url_for('admin'))
 
 if __name__ == '__main__':
     # Initialize database
